@@ -1,0 +1,32 @@
+# Dependencies
+node_modules
+package-lock.json
+yarn.lock
+
+# Parcel cache and logs
+.cache
+.parcel-cache
+
+# Editor specific files
+.DS_Store
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Uncomment the following line if you're using a CI/CD system that builds your project
+# dist
