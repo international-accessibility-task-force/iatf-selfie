@@ -241,6 +241,12 @@ function updateFaceStatus(isCentered) {
     statusElement.textContent = statusMessage + ' ✅';
     statusElement.style.color = 'green';
     speakMessage('Your face is centered. You can take a photo now.', true);
+    
+    // Focus on the 'take-and-download' button when face is centered
+    const takeAndDownloadButton = document.getElementById('take-and-download');
+    if (takeAndDownloadButton) {
+      takeAndDownloadButton.focus();
+    }
   } else {
     statusMessage = 'Face position: Not centered - Please center your face';
     statusElement.textContent = statusMessage + ' ❌';

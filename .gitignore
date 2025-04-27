@@ -29,4 +29,4 @@ yarn-error.log*
 .env.production.local
 
 # Uncomment the following line if you're using a CI/CD system that builds your project
-# dist
+dist
