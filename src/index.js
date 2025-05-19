@@ -663,27 +663,15 @@ async function app() {
   // Gui content will change depending on which model is in the query string.
   const urlParams = new URLSearchParams(window.location.search);
 
-  // Determine if we're in development or production mode
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  // Always have the same behavior regardless of environment
+  const isDev = true;
   
-  // Setup UI based on environment
+  // Setup UI
   setupUIForEnvironment(isDev);
 
-  // Always setup dat.gui but hide it in production
+  // Always setup dat.gui
   await setupDatGui(urlParams);
   stats = setupStats();
-  
-  // If in production, visually hide stats but keep them functional
-  if (!isDev) {
-    const statsElement = document.getElementById('stats');
-    if (statsElement) {
-      statsElement.style.opacity = '0.01';
-      statsElement.style.pointerEvents = 'none';
-      statsElement.style.position = 'fixed';
-      statsElement.style.top = '0';
-      statsElement.style.zIndex = '-1';
-    }
-  }
 
   camera = await Camera.setupCamera(STATE.camera);
 
