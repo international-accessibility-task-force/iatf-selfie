@@ -222,6 +222,14 @@ function setupUIForEnvironment(isDev) {
     if (announcePositionButton) announcePositionButton.style.display = 'inline-block';
     if (takeAndDownloadButton) takeAndDownloadButton.style.display = 'inline-block';
     
+    // Show development elements
+    const statsElement = document.getElementById('stats');
+    if (statsElement) statsElement.style.display = 'block';
+    
+    // Make sure dat.gui is visible
+    const datGuiElement = document.querySelector('.dg.ac');
+    if (datGuiElement) datGuiElement.style.display = 'block';
+    
     // Add Test Voice button in dev mode if it doesn't exist
     if (!document.getElementById('test-voice')) {
       const voiceTestButton = document.createElement('button');
@@ -251,6 +259,14 @@ function setupUIForEnvironment(isDev) {
     if (takePhotoButton) takePhotoButton.style.display = 'none';
     if (downloadPhotoButton) downloadPhotoButton.style.display = 'none';
     if (announcePositionButton) announcePositionButton.style.display = 'none';
+    
+    // Hide development elements
+    const statsElement = document.getElementById('stats');
+    if (statsElement) statsElement.style.display = 'none';
+    
+    // Hide dat.gui interface
+    const datGuiElement = document.querySelector('.dg.ac');
+    if (datGuiElement) datGuiElement.style.display = 'none';
     
     // Make sure Take & Download button is visible and styled prominently
     if (takeAndDownloadButton) {
@@ -415,11 +431,17 @@ function takeAndDownloadPhoto() {
       // Save the photo after a short delay to allow the speech to be heard
       setTimeout(() => {
         savePhoto(imageUrl, filename);
+        
+        // Disable the app and show start over button after photo is taken and downloaded
+        disableAppAndShowStartOver();
       }, 1500);
     } else {
       // If speech synthesis is not available, save immediately
       savePhoto(imageUrl, filename);
       alert(isMobile ? 'Photo captured. Saving to gallery.' : 'Photo captured and downloaded successfully!');
+      
+      // Disable the app and show start over button after photo is taken and downloaded
+      disableAppAndShowStartOver();
     }
     
     function savePhoto(imageUrl, filename) {
@@ -481,6 +503,99 @@ function takeAndDownloadPhoto() {
   }
 }
 
+// Function to disable the app and show Start Over button
+function disableAppAndShowStartOver() {
+  // Cancel the animation frame to stop the camera processing
+  window.cancelAnimationFrame(rafId);
+  
+  // Hide the Take & Download Photo button
+  const takeAndDownloadButton = document.getElementById('take-and-download');
+  if (takeAndDownloadButton) {
+    takeAndDownloadButton.style.display = 'none';
+  }
+  
+  // Check if Start Over button already exists, create it if not
+  let startOverButton = document.getElementById('start-over');
+  if (!startOverButton) {
+    startOverButton = document.createElement('button');
+    startOverButton.id = 'start-over';
+    startOverButton.textContent = 'Take Another Selfie';
+    startOverButton.setAttribute('aria-label', 'Take another selfie');
+    startOverButton.style.padding = '10px 20px';
+    startOverButton.style.fontSize = '16px';
+    startOverButton.style.backgroundColor = '#673AB7';
+    startOverButton.style.color = 'white';
+    startOverButton.style.border = 'none';
+    startOverButton.style.borderRadius = '5px';
+    startOverButton.style.cursor = 'pointer';
+    startOverButton.style.marginTop = '10px';
+    startOverButton.style.width = '100%';
+    startOverButton.style.maxWidth = '300px';
+    
+    // Add the button to the page
+    const buttonContainer = document.querySelector('.container div[style*="text-align: center"]');
+    if (buttonContainer) {
+      buttonContainer.appendChild(startOverButton);
+    }
+    
+    // Add event listener
+    startOverButton.addEventListener('click', startOver);
+  } else {
+    // Show the existing Start Over button
+    startOverButton.style.display = 'block';
+    startOverButton.textContent = 'Take Another Selfie';
+  }
+  
+  // Set focus on the button
+  setTimeout(() => {
+    if (startOverButton) {
+      startOverButton.focus();
+    }
+  }, 100);
+  
+  // Announce for screen readers
+  if ('speechSynthesis' in window) {
+    const message = 'Photo has been taken and downloaded. Press the Take Another Selfie button to take a new photo.';
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.rate = 1.1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+// Function to start over and reset the app
+function startOver() {
+  // Hide the captured photo
+  const capturedPhoto = document.getElementById('captured-photo');
+  if (capturedPhoto) {
+    capturedPhoto.style.display = 'none';
+  }
+  
+  // Show the Take & Download Photo button again
+  const takeAndDownloadButton = document.getElementById('take-and-download');
+  if (takeAndDownloadButton) {
+    takeAndDownloadButton.style.display = 'block';
+  }
+  
+  // Hide the Start Over button
+  const startOverButton = document.getElementById('start-over');
+  if (startOverButton) {
+    startOverButton.style.display = 'none';
+  }
+  
+  // Restart the camera processing
+  rafId = requestAnimationFrame(renderPrediction);
+  
+  // Announce for screen readers
+  if ('speechSynthesis' in window) {
+    const message = 'App restarted. You can now take a new photo.';
+    const utterance = new SpeechSynthesisUtterance(message);
+    utterance.rate = 1.1;
+    utterance.volume = 1;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
 // Initialize speech synthesis to ensure it works
 function initSpeechSynthesis() {
   if ('speechSynthesis' in window) {
@@ -537,7 +652,7 @@ async function app() {
   const urlParams = new URLSearchParams(window.location.search);
 
   // Determine if we're in development or production mode
-  const isDev = true; // I dont have time to fix Sonnet code now.
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   
   // Setup UI based on environment
   setupUIForEnvironment(isDev);
@@ -566,6 +681,7 @@ async function app() {
   const downloadPhotoButton = document.getElementById('download-photo');
   const announcePositionButton = document.getElementById('announce-position');
   const takeAndDownloadButton = document.getElementById('take-and-download');
+  const startOverButton = document.getElementById('start-over');
   
   if (takePhotoButton) {
     takePhotoButton.addEventListener('click', capturePhoto);
@@ -578,6 +694,11 @@ async function app() {
   // Add event listener for the combined take and download button
   if (takeAndDownloadButton) {
     takeAndDownloadButton.addEventListener('click', takeAndDownloadPhoto);
+  }
+  
+  // Add event listener for the start over button if it exists
+  if (startOverButton) {
+    startOverButton.addEventListener('click', startOver);
   }
   
   // Add event listener for the announce position button
