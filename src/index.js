@@ -617,44 +617,131 @@ function initSpeechSynthesis() {
     silentUtterance.volume = 0;
     window.speechSynthesis.speak(silentUtterance);
     
-    // Create a test voice button for troubleshooting
-    const container = document.querySelector('.container');
-    if (container) {
-      const testVoiceButton = document.createElement('button');
-      testVoiceButton.id = 'test-voice';
-      testVoiceButton.textContent = 'Test Voice';
-      testVoiceButton.setAttribute('aria-label', 'Test voice output');
-      testVoiceButton.style.padding = '10px 20px';
-      testVoiceButton.style.fontSize = '16px';
-      testVoiceButton.style.backgroundColor = '#673AB7';
-      testVoiceButton.style.color = 'white';
-      testVoiceButton.style.border = 'none';
-      testVoiceButton.style.borderRadius = '5px';
-      testVoiceButton.style.cursor = 'pointer';
-      testVoiceButton.style.marginTop = '10px';
-      
-      // Add event listener to test voice button
-      testVoiceButton.addEventListener('click', () => {
-        const testMessage = 'Voice output is working. You can now use the face detection app with voice guidance.';
-        const utterance = new SpeechSynthesisUtterance(testMessage);
-        utterance.volume = 1;
-        utterance.rate = 1.1;
-        utterance.pitch = 1;
-        utterance.lang = 'en-US';
+    // For mobile browsers, we need user interaction to enable audio
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Add an initial audio button that users must click to enable audio on mobile
+      const container = document.querySelector('.container');
+      if (container) {
+        const enableAudioButton = document.createElement('button');
+        enableAudioButton.id = 'enable-audio';
+        enableAudioButton.textContent = 'Enable Voice Guidance';
+        enableAudioButton.setAttribute('aria-label', 'Enable voice guidance for this app');
+        enableAudioButton.style.padding = '12px 24px';
+        enableAudioButton.style.fontSize = '18px';
+        enableAudioButton.style.backgroundColor = '#FF9800';
+        enableAudioButton.style.color = 'white';
+        enableAudioButton.style.border = 'none';
+        enableAudioButton.style.borderRadius = '5px';
+        enableAudioButton.style.cursor = 'pointer';
+        enableAudioButton.style.margin = '15px auto';
+        enableAudioButton.style.display = 'block';
+        enableAudioButton.style.width = '100%';
+        enableAudioButton.style.maxWidth = '300px';
         
-        // Cancel any ongoing speech
-        window.speechSynthesis.cancel();
+        // Add event listener to initialize audio
+        enableAudioButton.addEventListener('click', () => {
+          // Create a real sound to force audio context activation
+          const utterance = new SpeechSynthesisUtterance('Voice guidance is now enabled. You will hear instructions to help you take a selfie.');
+          utterance.volume = 1;
+          utterance.rate = 1.1;
+          utterance.pitch = 1;
+          
+          // On iOS, we need to create an AudioContext on user gesture
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const audioContext = new AudioContext();
+            // Create and play a short beep to unblock audio
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 440;
+            gainNode.gain.value = 0.1;
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+          } catch (e) {
+            console.error('Error creating AudioContext:', e);
+          }
+          
+          // Speak the guidance message
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.speak(utterance);
+          
+          // Remove the button after it's been clicked
+          enableAudioButton.style.display = 'none';
+          
+          // Ensure voice works for all future events
+          document.removeEventListener('touchstart', unblockAudio);
+        });
         
-        // Speak the test message
-        window.speechSynthesis.speak(utterance);
-      });
-      
-      // Add the button to the page
-      const buttonContainer = document.createElement('div');
-      buttonContainer.style.textAlign = 'center';
-      buttonContainer.style.marginTop = '10px';
-      buttonContainer.appendChild(testVoiceButton);
-      container.appendChild(buttonContainer);
+        // Add the button to the beginning of the container
+        if (container.firstChild) {
+          container.insertBefore(enableAudioButton, container.firstChild);
+        } else {
+          container.appendChild(enableAudioButton);
+        }
+        
+        // Function to unblock audio on any touch
+        function unblockAudio() {
+          const utterance = new SpeechSynthesisUtterance('');
+          utterance.volume = 0;
+          window.speechSynthesis.speak(utterance);
+          
+          try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            new AudioContext();
+          } catch (e) {}
+          
+          // Only need to do this once
+          document.removeEventListener('touchstart', unblockAudio);
+        }
+        
+        // Also try to unblock on any user interaction
+        document.addEventListener('touchstart', unblockAudio);
+      }
+    } else {
+      // Create a test voice button for troubleshooting (desktop only)
+      const container = document.querySelector('.container');
+      if (container) {
+        const testVoiceButton = document.createElement('button');
+        testVoiceButton.id = 'test-voice';
+        testVoiceButton.textContent = 'Test Voice';
+        testVoiceButton.setAttribute('aria-label', 'Test voice output');
+        testVoiceButton.style.padding = '10px 20px';
+        testVoiceButton.style.fontSize = '16px';
+        testVoiceButton.style.backgroundColor = '#673AB7';
+        testVoiceButton.style.color = 'white';
+        testVoiceButton.style.border = 'none';
+        testVoiceButton.style.borderRadius = '5px';
+        testVoiceButton.style.cursor = 'pointer';
+        testVoiceButton.style.marginTop = '10px';
+        
+        // Add event listener to test voice button
+        testVoiceButton.addEventListener('click', () => {
+          const testMessage = 'Voice output is working. You can now use the face detection app with voice guidance.';
+          const utterance = new SpeechSynthesisUtterance(testMessage);
+          utterance.volume = 1;
+          utterance.rate = 1.1;
+          utterance.pitch = 1;
+          utterance.lang = 'en-US';
+          
+          // Cancel any ongoing speech
+          window.speechSynthesis.cancel();
+          
+          // Speak the test message
+          window.speechSynthesis.speak(utterance);
+        });
+        
+        // Add the button to the page
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.textAlign = 'center';
+        buttonContainer.style.marginTop = '10px';
+        buttonContainer.appendChild(testVoiceButton);
+        container.appendChild(buttonContainer);
+      }
     }
   }
 }
