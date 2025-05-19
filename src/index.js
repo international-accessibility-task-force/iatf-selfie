@@ -260,13 +260,25 @@ function setupUIForEnvironment(isDev) {
     if (downloadPhotoButton) downloadPhotoButton.style.display = 'none';
     if (announcePositionButton) announcePositionButton.style.display = 'none';
     
-    // Hide development elements
+    // Hide development elements without breaking functionality
     const statsElement = document.getElementById('stats');
-    if (statsElement) statsElement.style.display = 'none';
+    if (statsElement) {
+      statsElement.style.opacity = '0.01';
+      statsElement.style.pointerEvents = 'none';
+      statsElement.style.position = 'fixed';
+      statsElement.style.top = '0';
+      statsElement.style.zIndex = '-1';
+    }
     
-    // Hide dat.gui interface
+    // Hide dat.gui interface without breaking functionality
     const datGuiElement = document.querySelector('.dg.ac');
-    if (datGuiElement) datGuiElement.style.display = 'none';
+    if (datGuiElement) {
+      datGuiElement.style.opacity = '0.01';
+      datGuiElement.style.pointerEvents = 'none';
+      datGuiElement.style.position = 'fixed';
+      datGuiElement.style.top = '0';
+      datGuiElement.style.zIndex = '-1';
+    }
     
     // Make sure Take & Download button is visible and styled prominently
     if (takeAndDownloadButton) {
@@ -657,14 +669,20 @@ async function app() {
   // Setup UI based on environment
   setupUIForEnvironment(isDev);
 
-  // Only setup dat.gui in dev mode
-  if (isDev) {
-    await setupDatGui(urlParams);
-    stats = setupStats();
-  } else {
-    // Hide stats in production
+  // Always setup dat.gui but hide it in production
+  await setupDatGui(urlParams);
+  stats = setupStats();
+  
+  // If in production, visually hide stats but keep them functional
+  if (!isDev) {
     const statsElement = document.getElementById('stats');
-    if (statsElement) statsElement.style.display = 'none';
+    if (statsElement) {
+      statsElement.style.opacity = '0.01';
+      statsElement.style.pointerEvents = 'none';
+      statsElement.style.position = 'fixed';
+      statsElement.style.top = '0';
+      statsElement.style.zIndex = '-1';
+    }
   }
 
   camera = await Camera.setupCamera(STATE.camera);
